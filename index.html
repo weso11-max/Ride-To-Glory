@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ride to Glory v0.14</title>
+<title>Ride to Glory v0.16</title>
 <style>
 :root{
   --bg:#0b0e12; --panel:#141922; --panel2:#1b2230; --text:#f6f7fb; --muted:#9ca8ba;
@@ -132,7 +132,7 @@ button{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:poin
   <div id="retirement" class="card sectiongap hidden"></div>
 </section>
 
-<div class="footer">Ride to Glory — prototype v0.14</div>
+<div class="footer">Ride to Glory — prototype v0.16</div>
 </div>
 
 <script>
@@ -474,6 +474,35 @@ function seriesAbilityBoost(){
  return {race:0,win:0,title:0};
 }
 
+function eliteMotoGPMomentum(){
+ if(state.series!=="MotoGP")return 0;
+ const rows=(state.history||[]).filter(h=>h.series==="MotoGP").slice(-6);
+ if(!rows.length)return 0;
+ const top5=rows.filter(h=>h.pos<=5).length;
+ const top3=rows.filter(h=>h.pos<=3).length;
+ const wins=rows.reduce((a,h)=>a+(h.wins||0),0);
+ const pods=rows.reduce((a,h)=>a+(h.pods||h.podiums||0),0);
+ const recent=rows.slice(-3);
+ const recentTop5=recent.filter(h=>h.pos<=5).length;
+ const recentWins=recent.reduce((a,h)=>a+(h.wins||0),0);
+ let m=0;
+ if(top5>=2)m+=.025;
+ if(top5>=3)m+=.025;
+ if(top5>=4)m+=.020;
+ if(top3>=2)m+=.025;
+ if(wins>=6)m+=.020;
+ if(wins>=12)m+=.020;
+ if(wins>=20)m+=.015;
+ if(pods>=20)m+=.015;
+ if(pods>=35)m+=.015;
+ if(recentTop5>=2)m+=.020;
+ if(recentTop5===3)m+=.020;
+ if(recentWins>=5)m+=.015;
+ if((state.ovr||0)>=88)m+=.015;
+ if((state.ovr||0)>=90)m+=.020;
+ return Math.min(.18,m);
+}
+
 function competitiveSeriesExperience(ser=state.series){
  const prior=(state.history||[]).filter(h=>h.series===ser && h.pos<=8);
  return Math.min(4,prior.length);
@@ -483,6 +512,83 @@ function recentSeriesForm(ser=state.series){
  if(!rows.length)return 0;
  return rows.reduce((a,h)=>a+(h.pos===1?14:h.pos<=3?10:h.pos<=5?6:h.pos<=8?3:h.pos<=12?0:-4),0)/rows.length;
 }
+
+function teamManufacturer(ser,team){
+ return teamMeta?.[ser]?.[team]?.manufacturer||"";
+}
+function manufacturerFamilyTeams(ser,team){
+ const m=teamManufacturer(ser,team);
+ return m?teamNames(ser).filter(t=>teamManufacturer(ser,t)===m):[];
+}
+function yearsAtCurrentTeam(){
+ let n=0;
+ const rows=(state.history||[]).slice().reverse();
+ for(const h of rows){
+   if(h.series===state.series && h.team===state.team)n++;
+   else break;
+ }
+ return n;
+}
+function teamPatienceYears(ser,team){
+ const profile=teamContractProfile(ser,team);
+ if(profile==="factory")return 2;
+ if(profile==="satellite")return 3;
+ if(profile==="bsb")return 4;
+ if(ser==="WorldSSP")return 3;
+ return 3;
+}
+function manufacturerAffinityBonus(ser,team){
+ const target=teamManufacturer(ser,team);
+ if(!target)return 0;
+ let bonus=0;
+ if(teamManufacturer(state.series,state.team)===target)bonus+=6;
+ const recent=(state.history||[]).slice(-5);
+ bonus+=Math.min(6,recent.filter(h=>teamManufacturer(h.series,h.team)===target).length*1.5);
+ if(ser===state.series && team===state.team)bonus+=Math.min(6,yearsAtCurrentTeam()*1.5);
+ return bonus;
+}
+function siblingTeamInterestBoost(ser,team){
+ const targetM=teamManufacturer(ser,team);
+ if(!targetM || targetM!==teamManufacturer(state.series,state.team))return 0;
+ const curProfile=teamContractProfile(state.series,state.team);
+ const targetProfile=teamContractProfile(ser,team);
+ const last=(state.history||[]).slice(-1)[0];
+ if(!last)return 0;
+ if(curProfile==="satellite" && targetProfile==="factory"){
+   if(last.pos<=3)return 10;
+   if(last.pos<=5 || (last.wins||0)>=2)return 7;
+   if(last.pos<=8)return 4;
+ }
+ if(curProfile==="factory" && targetProfile==="satellite"){
+   const exp=personalExpectation(last.series,last.team);
+   if(last.pos>exp.target+3)return 10;
+   if(last.pos>exp.target)return 7;
+   return 3;
+ }
+ return 0;
+}
+function renewalPressure(pos){
+ const exp=personalExpectation(state.series,state.team);
+ const years=yearsAtCurrentTeam();
+ const patience=teamPatienceYears(state.series,state.team);
+ const miss=Math.max(0,pos-exp.target);
+ let p=miss<=1?0:miss<=3?.10:miss<=6?.28:.52;
+
+ // A new signing is given time unless the season is a genuine disaster.
+ if(years<patience && miss<=6)p*=.35;
+ else if(years<patience && miss>6)p*=.70;
+
+ const last=(state.history||[]).slice(-1)[0];
+ if(last){
+   if((last.wins||0)>=2)p-=.08;
+   if((last.pods||last.podiums||0)>=6)p-=.05;
+   if(last.pos<=5)p-=.08;
+ }
+ if((state.reputation||0)>=70)p-=.08;
+ else if((state.reputation||0)>=45)p-=.04;
+ return clamp(p,0,.70);
+}
+
 function teamContractProfile(ser,team){
  const meta=teamMeta?.[ser]?.[team]||{};
  if((ser==="MotoGP"||ser==="WorldSBK") && meta.factory)return "factory";
@@ -509,6 +615,8 @@ function contractScore(ser,team){
  }else if(profile==="bsb"){
    if(state.age>=42)score-=(state.age-41)*1.5;
  }
+ score+=manufacturerAffinityBonus(ser,team);
+ score+=siblingTeamInterestBoost(ser,team);
  return score;
 }
 function offerThreshold(ser,team){
@@ -629,11 +737,21 @@ function simulateSeason(){
  const compExp=competitiveSeriesExperience(state.series);
  if(compExp>=2) titleChance+=Math.min(state.series==="MotoGP"?.09:.07,(compExp-1)*.025);
 
+ // Elite MotoGP momentum is earned through sustained front-running, not previous titles.
+ const eliteMomentum=state.series==="MotoGP"?eliteMotoGPMomentum():0;
+ titleChance+=eliteMomentum;
+
  const titleCaps={"Red Bull Rookies":.55,"Moto3":.50,"Moto2":.43,"WorldSSP":.44,"BSB":.32,"WorldSBK":.36,"MotoGP":.33};
  let cap=titleCaps[state.series]??.40;
- // Repeating is intentionally difficult: the field reacts and rivals improve.
+ // Repeating remains difficult, but proven elite MotoGP riders can sustain a genuine era.
  if(state.lastTitleSeries===state.series && state.consecutiveTitles>=1) cap*=.68;
  if(state.lastTitleSeries===state.series && state.consecutiveTitles>=2) cap*=.72;
+ if(state.series==="MotoGP"){
+   if(eliteMomentum>=.06)cap+=.05;
+   if(eliteMomentum>=.11)cap+=.05;
+   if(eliteMomentum>=.15)cap+=.04;
+   cap=Math.min(.47,cap);
+ }
  titleChance=clamp(titleChance,0,cap);
 
  // Only riders already in the top three can convert the season into a championship.
@@ -953,7 +1071,10 @@ function generateOffers(pos,title){
    return;
  }
 
- const dropped=Math.random()<dropChance(pos,title) || !teamWouldOffer(oldSeries,oldTeam) || !factoryRenewalException(oldSeries,oldTeam,pos);
+ const patiencePressure=renewalPressure(pos);
+ const severeFactoryRule=!factoryRenewalException(oldSeries,oldTeam,pos);
+ const marketFailure=!teamWouldOffer(oldSeries,oldTeam);
+ const dropped=(Math.random()<patiencePressure) || severeFactoryRule || (marketFailure && Math.random()<.45);
  if(!dropped){
    state.offers.push(makeOffer(oldSeries,oldTeam,true));
    state.contractMessage=`${oldTeam} want to keep you for another season.`;
@@ -987,6 +1108,31 @@ function generateOffers(pos,title){
    }
  }
 
+
+ // WorldSSP -> BSB is a genuine alternative route, not something reserved for champions.
+ if(oldSeries==="WorldSSP" && !title && state.offers.length<3){
+   const recent=recentSeriesResults("WorldSSP",4);
+   const years=recent.length;
+   const top10=recent.filter(h=>h.pos<=10).length;
+   const top6=recent.filter(h=>h.pos<=6).length;
+   const winsRecent=recent.reduce((a,h)=>a+(h.wins||0),0);
+   const podsRecent=recent.reduce((a,h)=>a+(h.pods||h.podiums||0),0);
+   let bsbChance=0;
+   if(years>=2 && top6>=2)bsbChance=.72;
+   else if(years>=2 && top10>=2)bsbChance=.48;
+   else if(years>=3 && (winsRecent>=2 || podsRecent>=6))bsbChance=.52;
+   else if(years>=3 && state.ovr>=74)bsbChance=.42;
+   if(["United Kingdom","Ireland"].includes(state.nation))bsbChance+=.15;
+
+   if(Math.random()<Math.min(.88,bsbChance)){
+     const team=shuffled(teamNames("BSB")).find(t=>teamWouldOffer("BSB",t)&&!state.offers.some(o=>o.series==="BSB"&&o.team===t));
+     if(team){
+       state.offers.push(makeOffer("BSB",team,false));
+       state.contractMessage="BSB teams see your WorldSSP experience as a strong foundation for a fresh route.";
+     }
+   }
+ }
+
  // Moto3 escape route after four seasons of showing promise.
  if(oldSeries==="Moto3" && !title){
    if(promotions.includes("WorldSSP") && state.offers.length<3){
@@ -1015,6 +1161,35 @@ function generateOffers(pos,title){
    }
  }
 
+
+ // Manufacturer ladder. A strong customer/satellite season can lead directly to the
+ // parent factory; an underperforming factory rider can remain in-family at a customer team.
+ if(state.offers.length<3 && ["MotoGP","WorldSBK"].includes(oldSeries)){
+   const family=manufacturerFamilyTeams(oldSeries,oldTeam).filter(t=>t!==oldTeam);
+   const last=(state.history||[]).slice(-1)[0];
+   const curProfile=teamContractProfile(oldSeries,oldTeam);
+
+   if(last && curProfile==="satellite" && (last.pos<=5 || (last.wins||0)>=2)){
+     const factoryTeam=family.find(t=>teamContractProfile(oldSeries,t)==="factory" && teamWouldOffer(oldSeries,t));
+     if(factoryTeam && !state.offers.some(o=>o.series===oldSeries&&o.team===factoryTeam)){
+       state.offers.push(makeOffer(oldSeries,factoryTeam,false));
+       state.contractMessage="Your results on customer machinery have put you on the parent factory's shortlist.";
+     }
+   }
+
+   if(last && curProfile==="factory"){
+     const exp=personalExpectation(oldSeries,oldTeam);
+     if(last.pos>exp.target){
+       const sister=shuffled(family.filter(t=>teamContractProfile(oldSeries,t)==="satellite" && teamWouldOffer(oldSeries,t)))
+         .find(t=>!state.offers.some(o=>o.series===oldSeries&&o.team===t));
+       if(sister){
+         state.offers.push(makeOffer(oldSeries,sister,false));
+         state.contractMessage="A sister customer team wants your factory experience and offers a route to stay with the manufacturer.";
+       }
+     }
+   }
+ }
+
  const sameSeriesTeams=teamNames(oldSeries).filter(t=>t!==oldTeam);
  const externalPool=[oldSeries,...promotions.filter(p=>p!=="MotoGP"&&p!=="BSB")];
  let guard=0;
@@ -1032,9 +1207,10 @@ function generateOffers(pos,title){
  }
 
  while(state.offers.length<3){
-   const candidates=[oldTeam,...sameSeriesTeams].filter(t=>!state.offers.some(o=>o.series===oldSeries&&o.team===t));
-   if(!candidates.length) break;
-   const team=candidates[0];
+   const ordered=!dropped?[oldTeam,...sameSeriesTeams]:sameSeriesTeams;
+   const candidates=ordered.filter(t=>!state.offers.some(o=>o.series===oldSeries&&o.team===t));
+   if(!candidates.length)break;
+   const team=candidates.find(t=>teamWouldOffer(oldSeries,t))||candidates[0];
    state.offers.push(makeOffer(oldSeries,team,team===oldTeam));
  }
 }
