@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ride to Glory v0.16</title>
+<title>Ride to Glory v0.20</title>
 <style>
 :root{
   --bg:#0b0e12; --panel:#141922; --panel2:#1b2230; --text:#f6f7fb; --muted:#9ca8ba;
@@ -40,6 +40,27 @@ button{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:poin
 .hidden{display:none!important}.sectiongap{margin-top:16px}.footer{color:var(--muted);font-size:11px;text-align:center;padding:18px 0}
 .pills{display:flex;gap:8px;flex-wrap:wrap}.pillbtn{background:#202735;color:#ccd5e2;border:1px solid #313b4a}.pillbtn.active{background:#4b1d1c;border-color:#8d3029;color:white}
 @media(max-width:800px){.grid{grid-template-columns:1fr}.statgrid{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}}
+
+.navtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}
+.navtab{background:#111720;color:var(--muted);border:1px solid var(--line);padding:10px 8px;border-radius:12px;font-size:12px}
+.navtab.active{background:#242d3a;color:var(--text);border-color:#47566b}
+.tabpage.hidden{display:none!important}
+.hero{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+.hero-main{min-width:0}.hero-main h2{font-size:28px;margin:2px 0 6px}.hero-meta{display:flex;gap:6px;flex-wrap:wrap}
+.seasonhero{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}
+.season-title{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:6px}
+.season-result{font-size:29px;font-weight:900;line-height:1.15}
+.season-team{font-size:15px;color:var(--muted);margin-top:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}.kpi{padding:10px;border-radius:12px;background:var(--panel2)}.kpi b{display:block;font-size:18px}.kpi span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.story{font-size:14px;line-height:1.65;color:#dbe2ec}
+.headline{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}.headline:last-child{border-bottom:0}
+.standrow{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);align-items:center}.standrow:last-child{border-bottom:0}.standrow small{display:block;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seasoncard{border:1px solid var(--line);border-radius:16px;background:#111720;margin:10px 0;overflow:hidden}.seasoncard summary{list-style:none;cursor:pointer;padding:14px;display:grid;grid-template-columns:65px minmax(0,1fr) auto;gap:10px;align-items:center}.seasoncard summary::-webkit-details-marker{display:none}.seasoncard[open] summary{border-bottom:1px solid var(--line)}.seasoncard .body{padding:14px}
+.yearbadge{font-weight:900;font-size:16px}.resultbadge{text-align:right;font-weight:900}.resultbadge.gold{color:var(--gold)}
+.muted{color:var(--muted)}.tiny{font-size:11px}.sectiontitle{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:0 0 8px}
+.worldgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.maker{background:var(--panel2);border-radius:12px;padding:10px}.maker b{display:block}.maker span{color:var(--muted);font-size:11px}
+.recordgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.record{background:var(--panel2);border-radius:14px;padding:13px}.record b{font-size:24px;display:block}.record span{color:var(--muted);font-size:11px}
+@media(max-width:800px){.seasonhero{grid-template-columns:1fr}.worldgrid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.navtabs{position:sticky;top:8px;z-index:3;background:rgba(11,14,18,.92);padding:6px;border-radius:14px;backdrop-filter:blur(10px)}.seasoncard summary{grid-template-columns:54px minmax(0,1fr) auto}}
 </style>
 </head>
 <body>
@@ -92,47 +113,88 @@ button{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:poin
 </section>
 
 <section id="game" class="hidden">
-  <div class="grid">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:15px">
-        <div>
-          <div class="sub" id="riderNation"></div>
-          <h2 style="font-size:27px;margin:4px 0" id="riderName"></h2>
+  <div class="card">
+    <div class="hero">
+      <div class="hero-main">
+        <div class="sub" id="riderNation"></div>
+        <h2 id="riderName"></h2>
+        <div class="hero-meta">
           <div id="currentRide" class="chip"></div>
           <div id="ageChip" class="chip"></div>
         </div>
-        <div style="text-align:right"><div class="bigovr" id="ovr">58</div><div class="ovrlabel">OVR</div></div>
       </div>
-      <div class="statgrid sectiongap">
-        <div class="stat"><b id="starts">0</b><span>Starts</span></div>
-        <div class="stat"><b id="wins">0</b><span>Wins</span></div>
-        <div class="stat"><b id="pods">0</b><span>Podiums</span></div>
-        <div class="stat"><b id="titles">0</b><span>Titles</span></div>
+      <div style="text-align:right"><div class="bigovr" id="ovr">58</div><div class="ovrlabel">OVR</div></div>
+    </div>
+    <div class="statgrid sectiongap">
+      <div class="stat"><b id="starts">0</b><span>Starts</span></div>
+      <div class="stat"><b id="wins">0</b><span>Wins</span></div>
+      <div class="stat"><b id="pods">0</b><span>Podiums</span></div>
+      <div class="stat"><b id="titles">0</b><span>Titles</span></div>
+    </div>
+  </div>
+
+  <div class="navtabs">
+    <button class="navtab active" data-tab="career" onclick="setTab('career')">Career</button>
+    <button class="navtab" data-tab="history" onclick="setTab('history')">History</button>
+    <button class="navtab" data-tab="world" onclick="setTab('world')">World</button>
+    <button class="navtab" data-tab="records" onclick="setTab('records')">Records</button>
+  </div>
+
+  <div id="tab-career" class="tabpage">
+    <div class="seasonhero">
+      <div class="card">
+        <div class="season-title">Current season</div>
+        <div id="seasonPreview"></div>
+        <div id="eventBox"></div>
+        <div id="simControls" class="sectiongap">
+          <button class="primary" style="width:100%;font-size:17px" onclick="simulateSeason()">Simulate season</button>
+        </div>
       </div>
-      <div id="eventBox"></div>
-      <div id="simControls" class="sectiongap">
-        <button class="primary" style="width:100%;font-size:17px" onclick="simulateSeason()">Simulate season</button>
+      <div class="card">
+        <div class="sectiontitle">Latest championship</div>
+        <div id="standingsBox"></div>
       </div>
     </div>
+
+    <div id="latestSeasonCard" class="sectiongap"></div>
+    <div id="offers" class="sectiongap"></div>
+    <div id="retirement" class="card sectiongap hidden"></div>
+  </div>
+
+  <div id="tab-history" class="tabpage hidden">
     <div class="card">
-      <h2>Current season</h2>
-      <div id="seasonPreview" style="color:var(--muted);line-height:1.7"></div><div id="standingsBox" class="sectiongap"></div>
-      <div id="offers" class="sectiongap"></div>
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+        <div><h2 style="margin-bottom:4px">Career timeline</h2><div class="sub">Tap a season to reopen the story, standings and statistics.</div></div>
+      </div>
+      <div id="seasonTimeline" class="sectiongap"></div>
+    </div>
+
+    <details class="card sectiongap">
+      <summary style="cursor:pointer;font-weight:800">Full statistics table</summary>
+      <div class="tablewrap sectiongap"><table class="history">
+        <thead><tr><th>Year</th><th>Age</th><th>Series</th><th>Team</th><th>OVR</th><th>Starts</th><th>Wins</th><th>Podiums</th><th>Poles</th><th>Pts</th><th>Pos</th></tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table></div>
+    </details>
+  </div>
+
+  <div id="tab-world" class="tabpage hidden">
+    <div class="card">
+      <h2>Racing world</h2>
+      <div class="sub">The current manufacturer pecking order and latest paddock context.</div>
+      <div id="worldContent" class="sectiongap"></div>
     </div>
   </div>
 
-  <div class="card sectiongap">
-    <h2>Career history</h2>
-    <div class="tablewrap"><table class="history">
-      <thead><tr><th>Age</th><th>Series</th><th>Team</th><th>OVR</th><th>Starts</th><th>Wins</th><th>Podiums</th><th>Poles</th><th>Pts</th><th>Pos</th></tr></thead>
-      <tbody id="historyBody"></tbody>
-    </table></div>
+  <div id="tab-records" class="tabpage hidden">
+    <div class="card">
+      <h2>Career records</h2>
+      <div id="recordsContent" class="sectiongap"></div>
+    </div>
   </div>
-
-  <div id="retirement" class="card sectiongap hidden"></div>
 </section>
 
-<div class="footer">Ride to Glory — prototype v0.16</div>
+<div class="footer">Ride to Glory — prototype v0.20</div>
 </div>
 
 <script>
@@ -371,7 +433,7 @@ function startCareer(){
  const style=document.getElementById("style").value, mods=styleMods(style);
  let attrs={pace:r(52,60),racecraft:r(50,59),qualifying:r(49,59),wet:r(45,60),consistency:r(49,60),tyres:r(48,59),fitness:r(53,62),aggression:r(48,60)};
  Object.keys(attrs).forEach(k=>attrs[k]=clamp(attrs[k]+mods[k],35,99));
- state={name,nation:document.getElementById("nation").value,number:+document.getElementById("number").value||27,style,age:14,series:"Red Bull Rookies",
+ state={name,nation:document.getElementById("nation").value,number:+document.getElementById("number").value||27,style,age:14,year:2026,series:"Red Bull Rookies",
  team:gridConfig[selectedGrid].team,rookieGrid:selectedGrid,rookieDevelopment:0,lastDevelopmentGain:0,developmentProfile:rollDevelopmentProfile(),careerCeiling:rollCareerCeiling(),consecutiveTitles:0,lastTitleSeries:null,attrs,ovr:0,baseOvr:0,injuryPenalty:0,teamRatings:initTeamRatings(),manufacturerRatings:JSON.parse(JSON.stringify(initialManufacturerRatings)),seasonCount:0,reputation:0,aiRiders:[],lastStandings:[],history:[],totals:{starts:0,wins:0,podiums:0,poles:0,titles:0},offerPending:false,retired:false};
  state.aiRiders=initAIWorld(); updateOVR(); document.getElementById("creator").classList.add("hidden");document.getElementById("game").classList.remove("hidden");render();
 }
@@ -771,12 +833,18 @@ function simulateSeason(){
  pods=adjustedTallies.pods;
  poles=adjustedTallies.poles;
  state.totals.starts+=starts;state.totals.wins+=wins;state.totals.podiums+=pods;state.totals.poles+=poles;
- state.history.push({age:state.age,series:state.series,team:state.team,ovr:state.ovr,starts,wins,pods,poles,pts,pos});
+ state.history.push({year:state.year,age:state.age,series:state.series,team:state.team,ovr:state.ovr,starts,wins,pods,poles,pts,pos});
  updatePlayerReputation(state.series,pos,wins,pods,personalExpectation(state.series,state.team),title);
  state.lastStandings=simulateChampionshipStandings(pos,pts);
+ const seasonRow=state.history[state.history.length-1];
+ if(seasonRow){
+   seasonRow.standings=JSON.parse(JSON.stringify(state.lastStandings||[]));
+   seasonRow.story=buildSeasonStory(seasonRow);
+   seasonRow.news=buildSeasonNews(seasonRow);
+ }
  advanceAIWorld();
  growDecline(pos,injury,title,wins,pods,starts);
- state.age++;
+ state.age++;state.year=(state.year||2026)+1;
  fluctuateBikes();
  if(!event && Math.random()<.14) event=randomEvent();
  document.getElementById("eventBox").innerHTML=event?`<div class="event">${event}</div>`:"";
@@ -1224,6 +1292,96 @@ function acceptOffer(i){
  }
  state.offerPending=false;state.offers=[];render();
 }
+
+let activeTab="career";
+function setTab(tab){
+ activeTab=tab;
+ ["career","history","world","records"].forEach(t=>{
+   document.getElementById("tab-"+t)?.classList.toggle("hidden",t!==tab);
+   document.querySelector(`[data-tab="${t}"]`)?.classList.toggle("active",t===tab);
+ });
+}
+function buildSeasonStory(h){
+ const finish=h.pos===1?"won the championship":h.pos<=3?`finished ${ordinal(h.pos)} in the championship`:h.pos<=5?`completed a strong ${ordinal(h.pos)}-place season`:`finished ${ordinal(h.pos)} in the championship`;
+ const results=h.wins?`${h.wins} win${h.wins===1?"":"s"} and ${h.pods} podium${h.pods===1?"":"s"}`:`${h.pods} podium${h.pods===1?"":"s"}`;
+ if(h.pos===1)return `${state.name} ${finish} with ${h.team}, delivering ${results} across ${h.starts} starts. It becomes one of the defining seasons of the career.`;
+ if(h.pos<=3)return `${state.name} ${finish} for ${h.team}. ${results.charAt(0).toUpperCase()+results.slice(1)} kept the title fight alive deep into the season.`;
+ if(h.wins>=3)return `${state.name} ${finish}, but ${h.wins} victories showed the outright pace was stronger than the final position suggests.`;
+ if(h.pos<=8)return `${state.name} ${finish} with ${h.team}, recording ${results} in a competitive campaign.`;
+ return `${state.name} endured a difficult ${h.series} season with ${h.team}, ending ${ordinal(h.pos)} after ${h.starts} starts.`;
+}
+function buildSeasonNews(h){
+ const lines=[];
+ if(h.pos===1)lines.push(`🏆 ${state.name} crowned ${h.series} champion`);
+ else if(h.pos<=3)lines.push(`⚔️ ${state.name} finishes ${ordinal(h.pos)} after a front-running ${h.series} campaign`);
+ if(h.wins>=5)lines.push(`🔥 ${h.wins} victories make this one of ${state.name}'s strongest winning seasons`);
+ if(h.pods>=12)lines.push(`📈 ${h.pods} podiums underline season-long consistency`);
+ const s=h.standings||[];
+ const champ=s.find(x=>x.pos===1);
+ if(champ && !champ.player)lines.push(`🌍 ${champ.name} takes the ${h.series} title for ${champ.team}`);
+ if(!lines.length)lines.push(`📰 ${h.team} complete the ${h.series} season in ${ordinal(h.pos)} with ${state.name}`);
+ return lines.slice(0,4);
+}
+function renderStandings(rows){
+ if(!rows?.length)return `<div class="muted">No completed championship yet.</div>`;
+ return rows.map(s=>`<div class="standrow"><b>${s.pos}</b><div>${s.player?`<b>YOU — ${s.name}</b>`:s.name}<small>${s.team}</small></div><b>${s.points} pts</b></div>`).join("");
+}
+function seasonCardHTML(h,open=false){
+ const title=h.pos===1?`🏆 ${h.series} World Champion`:`${ordinal(h.pos)} · ${h.series}`;
+ const news=(h.news||[]).map(n=>`<div class="headline"><span>${n}</span></div>`).join("");
+ return `<details class="seasoncard"${open?" open":""}>
+   <summary>
+     <div class="yearbadge">${h.year||""}</div>
+     <div><b>${h.series}</b><div class="tiny muted">${h.team}</div></div>
+     <div class="resultbadge ${h.pos===1?"gold":""}">${h.pos===1?"🏆 1st":ordinal(h.pos)}</div>
+   </summary>
+   <div class="body">
+     <div class="season-result">${title}</div>
+     <div class="season-team">${h.team} · Age ${h.age} · ${h.ovr} OVR</div>
+     <div class="kpis">
+       <div class="kpi"><b>${h.wins}</b><span>Wins</span></div>
+       <div class="kpi"><b>${h.pods}</b><span>Podiums</span></div>
+       <div class="kpi"><b>${h.poles}</b><span>Poles</span></div>
+       <div class="kpi"><b>${h.pts}</b><span>Points</span></div>
+     </div>
+     <div class="sectiongap"><div class="sectiontitle">Season story</div><div class="story">${h.story||buildSeasonStory(h)}</div></div>
+     <div class="sectiongap"><div class="sectiontitle">Championship top 3</div>${renderStandings(h.standings||[])}</div>
+     <div class="sectiongap"><div class="sectiontitle">Headlines</div>${news||`<div class="muted">No major headlines stored for this season.</div>`}</div>
+   </div>
+ </details>`;
+}
+function renderWorld(){
+ const el=document.getElementById("worldContent");if(!el)return;
+ const blocks=["MotoGP","WorldSBK","BSB"].map(ser=>{
+   const ratings=state.manufacturerRatings?.[ser]||{};
+   const ordered=Object.entries(ratings).sort((a,b)=>b[1]-a[1]);
+   return `<div class="sectiongap"><div class="sectiontitle">${ser} manufacturers</div><div class="worldgrid">${ordered.map(([m,v],i)=>`<div class="maker"><span>${i+1}. ${m}</span><b>${v} bike</b></div>`).join("")}</div></div>`;
+ }).join("");
+ const latest=state.history[state.history.length-1];
+ el.innerHTML=blocks+(latest?`<div class="sectiongap"><div class="sectiontitle">Latest championship</div>${renderStandings(latest.standings||[])}</div>`:"");
+}
+function renderRecords(){
+ const el=document.getElementById("recordsContent");if(!el)return;
+ const h=state.history||[];
+ const best=h.length?Math.min(...h.map(x=>x.pos)):null;
+ const peak=Math.max(state.ovr,...h.map(x=>x.ovr));
+ const gpTitles=h.filter(x=>x.series==="MotoGP"&&x.pos===1).length;
+ const sbkTitles=h.filter(x=>x.series==="WorldSBK"&&x.pos===1).length;
+ const bsbTitles=h.filter(x=>x.series==="BSB"&&x.pos===1).length;
+ el.innerHTML=`<div class="recordgrid">
+   <div class="record"><b>${peak}</b><span>Peak OVR</span></div>
+   <div class="record"><b>${state.totals.wins}</b><span>Career wins</span></div>
+   <div class="record"><b>${state.totals.podiums}</b><span>Career podiums</span></div>
+   <div class="record"><b>${state.totals.titles}</b><span>Championships</span></div>
+ </div>
+ <div class="sectiongap"><div class="sectiontitle">Major titles</div>
+   <div class="headline"><span>MotoGP</span><b style="margin-left:auto">${gpTitles}</b></div>
+   <div class="headline"><span>WorldSBK</span><b style="margin-left:auto">${sbkTitles}</b></div>
+   <div class="headline"><span>BSB</span><b style="margin-left:auto">${bsbTitles}</b></div>
+   ${best?`<div class="headline"><span>Best championship finish</span><b style="margin-left:auto">${ordinal(best)}</b></div>`:""}
+ </div>`;
+}
+
 function render(){
  document.getElementById("riderName").textContent=`#${state.number} ${state.name}`;
  document.getElementById("riderNation").textContent=state.nation;
@@ -1231,20 +1389,38 @@ function render(){
  document.getElementById("ageChip").textContent=`Age ${state.age}`;
  document.getElementById("ovr").textContent=state.ovr;
  ["starts","wins","pods","titles"].forEach((id,i)=>document.getElementById(id).textContent=[state.totals.starts,state.totals.wins,state.totals.podiums,state.totals.titles][i]);
- const exp=personalExpectation(state.series,state.team), currentBike=bikeRating();
- const rookieLine=state.series==="Red Bull Rookies"?`<br>${gridConfig[state.rookieGrid].label} development philosophy.`:"";
- document.getElementById("seasonPreview").innerHTML=`You are entering age <b>${state.age}</b> in <b>${state.series}</b> with <b>${state.team}</b>.<br>Current ability: <b>${state.ovr} OVR</b> · Bike: <b>${currentBike}</b>.<br>Team expectation: <b>${exp.label}</b> — target <b>${ordinal(exp.target)} or better</b>.${rookieLine}`;
- const standingsBox=document.getElementById("standingsBox");
- if(state.lastStandings&&state.lastStandings.length){
-   standingsBox.innerHTML=`<h3 style="margin:0 0 8px">Championship top 3</h3>`+state.lastStandings.map(s=>`<div style="display:grid;grid-template-columns:28px 1fr auto;gap:8px;padding:7px 0;border-bottom:1px solid #26303e"><b>${s.pos}</b><span>${s.player?"<b>YOU — "+s.name+"</b>":s.name}<small style="display:block;color:var(--muted)">${s.team}</small></span><b>${s.points} pts</b></div>`).join("");
- }else standingsBox.innerHTML="";
 
- document.getElementById("historyBody").innerHTML=state.history.slice().reverse().map(h=>`<tr><td>${h.age}</td><td>${h.series}</td><td>${h.team}</td><td>${h.ovr}</td><td>${h.starts}</td><td>${h.wins}</td><td>${h.pods}</td><td>${h.poles}</td><td>${h.pts}</td><td>${h.pos===1?"🏆 1st":ordinal(h.pos)}</td></tr>`).join("");
+ const exp=personalExpectation(state.series,state.team),currentBike=bikeRating();
+ const rookieLine=state.series==="Red Bull Rookies"?`<div class="tiny muted sectiongap">${gridConfig[state.rookieGrid].label} development philosophy</div>`:"";
+ document.getElementById("seasonPreview").innerHTML=`<div class="season-result">${state.year||2026} · ${state.series}</div>
+   <div class="season-team">${state.team}</div>
+   <div class="kpis">
+    <div class="kpi"><b>${state.ovr}</b><span>OVR</span></div>
+    <div class="kpi"><b>${currentBike}</b><span>Bike</span></div>
+    <div class="kpi"><b>${ordinal(exp.target)}</b><span>Target</span></div>
+    <div class="kpi"><b>${state.age}</b><span>Age</span></div>
+   </div>
+   <div class="story sectiongap">Team expectation: <b>${exp.label}</b>. Target ${ordinal(exp.target)} or better.${rookieLine}</div>`;
+
+ document.getElementById("standingsBox").innerHTML=renderStandings(state.lastStandings||[]);
+
+ const latest=state.history[state.history.length-1];
+ document.getElementById("latestSeasonCard").innerHTML=latest?`<div class="card"><div class="sectiontitle">Last season</div>${seasonCardHTML(latest,true)}</div>`:"";
+
+ document.getElementById("seasonTimeline").innerHTML=state.history.length
+   ?state.history.slice().reverse().map((h,i)=>seasonCardHTML(h,i===0)).join("")
+   :`<div class="muted">Your completed seasons will appear here.</div>`;
+
+ document.getElementById("historyBody").innerHTML=state.history.slice().reverse().map(h=>`<tr><td>${h.year||""}</td><td>${h.age}</td><td>${h.series}</td><td>${h.team}</td><td>${h.ovr}</td><td>${h.starts}</td><td>${h.wins}</td><td>${h.pods}</td><td>${h.poles}</td><td>${h.pts}</td><td>${h.pos===1?"🏆 1st":ordinal(h.pos)}</td></tr>`).join("");
+
  let offers=document.getElementById("offers");
  if(state.offerPending){
-   offers.innerHTML=`<h2>Contract offers</h2><div style="color:var(--muted);font-size:13px;margin-bottom:8px">${state.contractMessage||""}</div>`+state.offers.map((o,i)=>{const ex=teamExpectation(o.series,o.team);return `<div class="offer"><div><strong>${o.team}${o.renewal?" · Current team":""}</strong><small>${o.series} · Bike ${o.bike ?? bikeRating(o.series,o.team)} · ${ex.label} (target ${ordinal(ex.target)}) · €${o.salary}k/year</small></div><button class="secondary" onclick="acceptOffer(${i})">${o.renewal?"Renew":"Sign"}</button></div>`}).join("");
+   offers.innerHTML=`<div class="card"><h2>Contract offers</h2><div class="sub">${state.contractMessage||""}</div>`+
+   state.offers.map((o,i)=>{const ex=teamExpectation(o.series,o.team);return `<div class="offer"><div><strong>${o.team}${o.renewal?" · Current team":""}</strong><small>${o.series} · Bike ${o.bike ?? bikeRating(o.series,o.team)} · ${ex.label} · €${o.salary}k/year</small></div><button class="secondary" onclick="acceptOffer(${i})">${o.renewal?"Renew":"Sign"}</button></div>`}).join("")+`</div>`;
  }else offers.innerHTML="";
+
  document.getElementById("simControls").classList.toggle("hidden",state.offerPending||state.retired);
+ renderWorld();renderRecords();setTab(activeTab);
 }
 function ordinal(n){let s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])}
 function retire(){
